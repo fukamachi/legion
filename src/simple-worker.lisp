@@ -72,7 +72,7 @@ It raises an error if the WORKER is already running."
   (with-slots (thread status) worker
     (when thread
       (error "Worker is already running."))
-    (setf status :idle)
+    (setf status :running)
     (setf thread
           (make-thread (make-thread-function worker)
                        :name "simple-worker")))

@@ -7,7 +7,9 @@
 
 (plan 8)
 
-(let ((worker (make-worker (lambda (worker) (declare (ignore worker))))))
+(let ((worker (make-worker (lambda (worker)
+                             (declare (ignore worker))
+                             (sleep 0.3)))))
   (subtest "can make"
     (ok worker)
     (is (worker-status worker) :shutdown)
@@ -15,11 +17,12 @@
 
   (subtest "can start"
     (ok (start-worker worker) "start-worker")
-    (is (worker-status worker) :idle "status is idle")
+    (is (worker-status worker) :running "status is idle")
     (is (worker-queue-count worker) 0 "queue is empty"))
 
   (subtest "can stop"
     (ok (stop-worker worker) "stop-worker")
+    (sleep 0.5)
     (is (worker-status worker) :shutdown "status is shutdown")
     (is (worker-queue-count worker) 0 "queue is empty")))
 
@@ -45,7 +48,7 @@
 
   (subtest "can start"
     (ok (start-worker worker) "start-worker")
-    (is (worker-status worker) :idle "status is idle")
+    (is (worker-status worker) :running "status is running")
     (is results #() :test #'equalp))
 
   (sleep 0.3)
