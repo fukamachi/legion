@@ -8,13 +8,15 @@ Simple multithreading worker mechanism.
 (defparameter *worker*
   (make-worker
    (let ((out *standard-output*))
-     (lambda (val)
-       (format out "Processed: ~S~%" val)))))
+     (lambda (worker)
+       (multiple-value-bind (val existsp)
+           (dequeue worker)
+         (format out "Processed: ~S~%" val))))))
 
 (start-worker *worker*)
 
-(enqueue-worker *worker* 10)
-(enqueue-worker *worker* "Hi")
+(enqueue *worker* 10)
+(enqueue *worker* "Hi")
 
 (stop-worker *worker*)
 ```
@@ -54,6 +56,10 @@ Stop the given `worker` immediately.
 ### \[Function\] (enqueue worker val)
 
 Enqueue a new job `val`. It will be passed to a function specified for `make-worker`.
+
+### \[Function\] (dequeue worker) => val, existsp
+
+Dequeue a job from `worker`'s queue.
 
 ## Author
 

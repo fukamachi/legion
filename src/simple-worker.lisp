@@ -4,7 +4,7 @@
   (:import-from :cl-speedy-queue
                 :make-queue
                 #+nil :enqueue
-                :dequeue
+                #+nil :dequeue
                 :queue-count
                 :queue-empty-p
                 :queue-full-p)
@@ -24,7 +24,8 @@
            :start-worker
            :stop-worker
            :kill-worker
-           :enqueue))
+           :enqueue
+           :dequeue))
 (in-package :simple-worker)
 
 (defstruct (worker (:constructor make-worker (process-fn &key (queue-size 128)
@@ -46,22 +47,18 @@
 (defun make-thread-function (worker)
   (let ((process-fn (worker-process-fn worker))
         (queue (worker-queue worker))
-        (queue-lock (worker-queue-lock worker))
         (wait-lock (worker-wait-lock worker))
         (wait-cond (worker-wait-cond worker)))
     (lambda ()
       (unwind-protect
            (loop
-             (if (queue-empty-p queue)
-                 (if (eq (worker-status worker) :shutting)
-                     (return)
-                     (progn
-                       (setf (worker-status worker) :idle)
-                       (with-recursive-lock-held (wait-lock)
-                         (condition-wait wait-cond wait-lock))))
-                 (funcall process-fn
-                          (with-recursive-lock-held (queue-lock)
-                            (dequeue queue)))))
+             (funcall process-fn worker)
+             (when (queue-empty-p queue)
+               (when (eq (worker-status worker) :shutting)
+                 (return))
+               (setf (worker-status worker) :idle)
+               (with-recursive-lock-held (wait-lock)
+                 (condition-wait wait-cond wait-lock))))
         (vom:info "worker is shutting down. bye.")
         (setf (worker-status worker) :shutdown)))))
 
@@ -72,50 +69,60 @@
 (defun start-worker (worker)
   "Start the given WORKER.
 It raises an error if the WORKER is already running."
-  (when (worker-thread worker)
-    (error "Worker is already running."))
-  (setf (worker-status worker) :idle)
-  (setf (worker-thread worker)
-        (make-thread (make-thread-function worker)
-                     :name "simple-worker"))
+  (with-slots (thread status) worker
+    (when thread
+      (error "Worker is already running."))
+    (setf status :idle)
+    (setf thread
+          (make-thread (make-thread-function worker)
+                       :name "simple-worker")))
   (vom:info "worker has started.")
   worker)
 
 (defun stop-worker (worker)
   "Stop the given WORKER after processing its queued jobs.
 It raises an error if the WORKER is not running."
-  (unless (worker-thread worker)
-    (error "Worker is not running."))
-  (if (eq (worker-status worker) :idle)
-      (kill-worker worker)
-      (progn
-        (setf (worker-status worker) :shutting)
-        (vom:info "worker is going to be shutted down.")))
+  (with-slots (thread status) worker
+    (unless thread
+      (error "Worker is not running."))
+    (if (eq status :idle)
+        (kill-worker worker)
+        (progn
+          (setf status :shutting)
+          (vom:info "worker is going to be shutted down."))))
   worker)
 
 (defun kill-worker (worker)
   "Stop the given WORKER immediately.
 It raises an error if the WORKER is not running."
-  (let ((thread (worker-thread worker)))
+  (with-slots (thread status) worker
     (unless thread
       (error "Worker is not running"))
     (when (thread-alive-p thread)
       (destroy-thread thread))
     (vom:info "worker has been killed.")
-    (setf (worker-thread worker) nil
-          (worker-status worker) :shutdown))
+    (setf thread nil
+          status :shutdown))
   worker)
 
 (defun enqueue (worker val)
   "Enqueue VAL to WORKER's queue. This returns WORKER when the queueing has been succeeded; otherwise NIL is returned."
   (with-slots (status queue queue-lock wait-cond) worker
-    (when (or (not (or (eq status :running)
-                       (eq status :idle)))
+    (when (or (eq status :shutting)
               (queue-full-p queue))
       (return-from enqueue nil))
     (with-recursive-lock-held (queue-lock)
       (cl-speedy-queue:enqueue val queue))
-    (when (eq (worker-status worker) :idle)
+    (when (eq status :idle)
       (condition-notify wait-cond)
-      (setf (worker-status worker) :running)))
+      (setf status :running)))
   worker)
+
+(defun dequeue (worker)
+  "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag."
+  (with-slots (queue queue-lock) worker
+    (if (queue-empty-p queue)
+        (values nil nil)
+        (values (with-recursive-lock-held (queue-lock)
+                  (cl-speedy-queue:dequeue queue))
+                t))))
