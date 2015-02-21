@@ -11,13 +11,13 @@
    (let ((out *standard-output*))
      (lambda (worker)
        (multiple-value-bind (val existsp)
-           (dequeue worker)
+           (next-job worker)
          (format out "Processed: ~S~%" val))))))
 
 (start-worker *worker*)
 
-(enqueue *worker* 10)
-(enqueue *worker* "Hi")
+(add-job *worker* 10)
+(add-job *worker* "Hi")
 
 (stop-worker *worker*)
 ```
@@ -54,11 +54,11 @@ Stop the given `worker` after processing its queued jobs.
 
 Stop the given `worker` immediately.
 
-### \[Function\] (enqueue worker val)
+### \[Function\] (add-job worker val)
 
 Enqueue a new job `val`. It will be passed to a function specified for `make-worker`.
 
-### \[Function\] (dequeue worker) => val, existsp
+### \[Function\] (next-job worker) => val, existsp
 
 Dequeue a job from `worker`'s queue.
 

@@ -32,7 +32,7 @@
        (worker (make-worker (lambda (worker)
                               (sleep 0.1)
                               (multiple-value-bind (val existsp)
-                                  (dequeue worker)
+                                  (next-job worker)
                                 (when existsp
                                   (vector-push-extend (* val 2) results)))))))
   (subtest "can make"
@@ -40,8 +40,8 @@
     (is (worker-status worker) :shutdown)
     (is (worker-queue-count worker) 0))
 
-  (subtest "can enqueue"
-    (ok (enqueue worker 128) "enqueue")
+  (subtest "can add-job"
+    (ok (add-job worker 128) "add-job")
     (is (worker-status worker) :shutdown "status is still shutdown")
     (is (worker-queue-count worker) 1 "queue count is 1")
     (is results #() :test #'equalp))
@@ -58,7 +58,7 @@
     (is (worker-queue-count worker) 0 "queue is empty")
     (is results #(256) :test #'equalp)
     (dotimes (i 5)
-      (enqueue worker (* i 3)))
+      (add-job worker (* i 3)))
     (is (worker-status worker) :running))
 
   (sleep 1)

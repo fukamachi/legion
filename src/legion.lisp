@@ -3,8 +3,8 @@
   (:use :cl)
   (:import-from :cl-speedy-queue
                 :make-queue
-                #+nil :enqueue
-                #+nil :dequeue
+                :enqueue
+                :dequeue
                 :queue-count
                 :queue-empty-p
                 :queue-full-p)
@@ -24,8 +24,8 @@
            :start-worker
            :stop-worker
            :kill-worker
-           :enqueue
-           :dequeue))
+           :add-job
+           :next-job))
 (in-package :legion)
 
 (defstruct (worker (:constructor make-worker (process-fn &key (queue-size 128)
@@ -105,24 +105,24 @@ It raises an error if the WORKER is not running."
           status :shutdown))
   worker)
 
-(defun enqueue (worker val)
+(defun add-job (worker val)
   "Enqueue VAL to WORKER's queue. This returns WORKER when the queueing has been succeeded; otherwise NIL is returned."
   (with-slots (status queue queue-lock wait-cond) worker
     (when (or (eq status :shutting)
               (queue-full-p queue))
-      (return-from enqueue nil))
+      (return-from add-job nil))
     (with-recursive-lock-held (queue-lock)
-      (cl-speedy-queue:enqueue val queue))
+      (enqueue val queue))
     (when (eq status :idle)
       (condition-notify wait-cond)
       (setf status :running)))
   worker)
 
-(defun dequeue (worker)
+(defun next-job (worker)
   "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag."
   (with-slots (queue queue-lock) worker
     (if (queue-empty-p queue)
         (values nil nil)
         (values (with-recursive-lock-held (queue-lock)
-                  (cl-speedy-queue:dequeue queue))
+                  (dequeue queue))
                 t))))
