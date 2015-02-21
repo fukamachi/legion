@@ -5,14 +5,16 @@
 
 ## Usage
 
+### Worker
+
 ```common-lisp
 (defparameter *worker*
   (make-worker
-   (let ((out *standard-output*))
-     (lambda (worker)
-       (multiple-value-bind (val existsp)
-           (next-job worker)
-         (format out "Processed: ~S~%" val))))))
+    (let ((out *standard-output*))
+      (lambda (worker)
+        (multiple-value-bind (val existsp)
+            (next-job worker)
+          (format out "Processed: ~S~%" val))))))
 
 (start-worker *worker*)
 
@@ -22,11 +24,32 @@
 (stop-worker *worker*)
 ```
 
+### Cluster
+
+```common-lisp
+(defparameter *cluster*
+  (make-cluster 4
+    (let ((out *standard-output*))
+          (lambda (worker)
+            (multiple-value-bind (val existsp)
+                (next-job worker)
+              (format out "Processed: ~S~%" val))))))
+
+(start-cluster *cluster*)
+
+(add-job *cluster* 10)
+(add-job *cluster* "Hi")
+
+(stop-cluster *cluster*)
+```
+
+NOTE: Cluster doesn't guarantee the order of processing jobs.
+
 ## Functions
 
 ### \[Structure\] worker
 
-Base structure class.
+Base structure class of workers.
 
 ### \[Function\] (make-worker process-fn &key (queue-size 128))
 
@@ -61,6 +84,28 @@ Enqueue a new job `val`. It will be passed to a function specified for `make-wor
 ### \[Function\] (next-job worker) => val, existsp
 
 Dequeue a job from `worker`'s queue.
+
+### \[Structure\] cluster
+
+Base structure class of clusters.
+
+### \[Function\] (make-cluster worker-num process-fn &key (queue-size 128) scheduler)
+
+Create and return a cluster with `worker-num` workers with `process-fn`.
+
+You can specify a `scheduler` function which takes exact 2 arguments -- workers and a job -- for task-scheduling. The default is round-robin scheduler.
+
+### \[Function\] (cluster-status cluster)
+
+Return the cluster's status which is one of `:running`, `:shutting` and `:shutdown`.
+
+### \[Function\] (start-cluster cluster)
+
+Start workers of `cluster`.
+
+### \[Function\] (cluster-workers cluster) => workers-array
+
+Return workers of `cluster` in simple-array.
 
 ## Author
 

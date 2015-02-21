@@ -5,7 +5,7 @@
         :prove))
 (in-package :legion-test)
 
-(plan 8)
+(plan 13)
 
 (let ((worker (make-worker (lambda (worker)
                              (declare (ignore worker))
@@ -17,7 +17,7 @@
 
   (subtest "can start"
     (ok (start-worker worker) "start-worker")
-    (is (worker-status worker) :running "status is idle")
+    (is (worker-status worker) :idle "status is idle")
     (is (worker-queue-count worker) 0 "queue is empty"))
 
   (subtest "can stop"
@@ -69,5 +69,42 @@
     (is (worker-status worker) :shutdown "status is shutdown")
     (is (worker-queue-count worker) 0 "queue is empty")
     (is results #(256 0 6 12 18 24) :test #'equalp)))
+
+(let* ((bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
+                                        (*error-output* . ,*error-output*)))
+       (results-lock (bt:make-recursive-lock))
+       (results (make-array 0 :adjustable t :fill-pointer 0))
+       (cluster (make-cluster 4 (lambda (worker)
+                                  (sleep 0.1)
+                                  (multiple-value-bind (val existsp)
+                                      (next-job worker)
+                                    (when existsp
+                                      (bt:with-recursive-lock-held (results-lock)
+                                        (vector-push-extend (* val 2) results))))))))
+  (ok cluster "can make")
+
+  (subtest "can add-job"
+    (ok (add-job cluster 128) "add-job")
+    (is results #() :test #'equalp))
+
+  (subtest "can start"
+    (ok (start-cluster cluster) "start-cluster")
+    (is results #() :test #'equalp))
+
+  (sleep 0.3)
+
+  (subtest "can process"
+    (is results #(256) :test #'equalp)
+    (dotimes (i 5)
+      (add-job cluster (* i 3))))
+
+  (sleep 1)
+
+  (subtest "can stop"
+    (ok (stop-cluster cluster))
+    (is (cluster-status cluster) :shutdown "status is shutdown")
+    (is (sort results #'<)
+        #(0 6 12 18 24 256)
+        :test 'equalp)))
 
 (finalize)
