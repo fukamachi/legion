@@ -1,9 +1,9 @@
 (in-package :cl-user)
-(defpackage simple-worker-test
+(defpackage legion-test
   (:use :cl
-        :simple-worker
+        :legion
         :prove))
-(in-package :simple-worker-test)
+(in-package :legion-test)
 
 (plan 8)
 

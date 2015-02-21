@@ -1,5 +1,5 @@
 (in-package :cl-user)
-(defpackage simple-worker
+(defpackage legion
   (:use :cl)
   (:import-from :cl-speedy-queue
                 :make-queue
@@ -26,7 +26,7 @@
            :kill-worker
            :enqueue
            :dequeue))
-(in-package :simple-worker)
+(in-package :legion)
 
 (defstruct (worker (:constructor make-worker (process-fn &key (queue-size 128)
                                               &aux (queue (make-queue queue-size)))))
@@ -75,7 +75,7 @@ It raises an error if the WORKER is already running."
     (setf status :running)
     (setf thread
           (make-thread (make-thread-function worker)
-                       :name "simple-worker")))
+                       :name "legion")))
   (vom:info "worker has started.")
   worker)
 

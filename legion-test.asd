@@ -1,21 +1,21 @@
 #|
-  This file is a part of simple-worker project.
+  This file is a part of legion project.
   Copyright (c) 2015 Eitaro Fukamachi (e.arrows@gmail.com)
 |#
 
 (in-package :cl-user)
-(defpackage simple-worker-test-asd
+(defpackage legion-test-asd
   (:use :cl :asdf))
-(in-package :simple-worker-test-asd)
+(in-package :legion-test-asd)
 
-(defsystem simple-worker-test
+(defsystem legion-test
   :author "Eitaro Fukamachi"
   :license "BSD 2-Clause"
-  :depends-on (:simple-worker
+  :depends-on (:legion
                :prove)
   :components ((:module "t"
                 :components
-                ((:test-file "simple-worker"))))
+                ((:test-file "legion"))))
 
   :defsystem-depends-on (:prove-asdf)
   :perform (test-op :after (op c)

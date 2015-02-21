@@ -1,6 +1,7 @@
-# Simple Worker
+# Legion
 
-Simple multithreading worker mechanism.
+> Jesus asked him, "What is your name?" And he said, "My name is Legion, for we are many."
+> &#x2500;&#x2500; Gospel of Mark chapter 5, verse 9
 
 ## Usage
 
