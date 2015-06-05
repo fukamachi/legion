@@ -8,7 +8,7 @@ sh bootstrap
 make
 sudo make install
 
-ros --version
+echo `ros --version`
 
 case "$LISP" in
     ccl)
@@ -21,4 +21,4 @@ case "$LISP" in
         ;;
 esac
 
-ros run -- --version
+echo `ros run -- --version`
