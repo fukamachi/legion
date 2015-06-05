@@ -5,8 +5,8 @@ log () {
     echo `$1`
 }
 
-$ROSWELL_TARBALL_PATH=$HOME/roswell.tar.gz
-$ROSWELL_DIR=$HOME/roswell
+ROSWELL_TARBALL_PATH=$HOME/roswell.tar.gz
+ROSWELL_DIR=$HOME/roswell
 
 echo "Installing Roswell..."
 
