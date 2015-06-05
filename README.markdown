@@ -33,10 +33,10 @@
 (defparameter *cluster*
   (make-cluster 4
     (let ((out *standard-output*))
-          (lambda (worker)
-            (multiple-value-bind (val existsp)
-                (next-job worker)
-              (format out "Processed: ~S~%" val))))))
+      (lambda (worker)
+        (multiple-value-bind (val existsp)
+            (next-job worker)
+          (format out "Processed: ~S~%" val))))))
 
 (start-cluster *cluster*)
 
