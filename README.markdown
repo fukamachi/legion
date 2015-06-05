@@ -1,5 +1,8 @@
 # Legion
 
+[![Build Status](https://travis-ci.org/fukamachi/legion.svg?branch=master)](https://travis-ci.org/fukamachi/legion)
+[![Coverage Status](https://coveralls.io/repos/fukamachi/legion/badge.svg?branch=master)](https://coveralls.io/r/fukamachi/legion)
+
 > Jesus asked him, "What is your name?" And he said, "My name is Legion, for we are many."
 > &#x2500;&#x2500; Gospel of Mark chapter 5, verse 9
 
