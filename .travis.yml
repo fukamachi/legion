@@ -10,8 +10,7 @@ install:
   - sh $TRAVIS_BUILD_DIR/install-roswell.sh
 
 script:
-  - ros --source-registry "$TRAVIS_BUILD_DIR:$HOME/lisp"
-        -s prove -s cl-coveralls
+  - ros -s prove -s cl-coveralls
         -e '(or (coveralls:with-coveralls (:exclude "t")
                   (prove:run :legion-test))
                 (uiop:quit -1))'
