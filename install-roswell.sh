@@ -42,5 +42,7 @@ ros -e '(format t "~%~a ~a up and running! (ASDF ~a)~%~%"
 ASDF_SR_CONF_DIR="$HOME/.config/common-lisp/source-registry.conf.d"
 LOCAL_LISP_TREE="$HOME/lisp"
 
+mkdir -p "$ASDF_SR_CONF_DIR"
+mkdir -p "$LOCAL_LISP_TREE"
 echo "(:tree \"$TRAVIS_BUILD_DIR/\")" > "$ASDF_SR_CONF_FILE"
 echo "(:tree \"$LOCAL_LISP_TREE/\")" >> "$ASDF_SR_CONF_FILE"
