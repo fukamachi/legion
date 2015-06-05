@@ -33,7 +33,7 @@ case "$LISP" in
         ;;
 esac
 
-ros -e '(format t "~%~a ~a up and running! (ASDF ~a)~%~%"
+ros -e '(format t "~&~A ~A up and running! (ASDF ~A)~2%"
                 (lisp-implementation-type)
                 (lisp-implementation-version)
                 (asdf:asdf-version))'
