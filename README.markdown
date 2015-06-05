@@ -53,21 +53,21 @@ Base structure class of workers.
 
 ### \[Function\] (make-worker process-fn &key (queue-size 128))
 
-Create and return a worker thread which has a fixed-length queue. `process-fn` is a funcallable object which takes single value.
+Create and return a worker thread which has a fixed-length queue. `process-fn` is a funcallable object which takes a single value.
 
 You can specify the value by specifying `:queue-size`. The default value is `128`.
 
 ### \[Function\] (worker-status worker)
 
-Return the worker's status which is one of `:running`, `:idle`, `:shutting` and `:shutdown`.
+Return the worker's status which is specifically one of `:running`, `:idle`, `:shutting` and `:shutdown`.
 
 ### \[Function\] (worker-queue-count worker)
 
-Return the number of outstanding jobs.
+Return the number of outstanding jobs of the `worker`.
 
 ### \[Function\] (start-worker worker)
 
-Start the given `worker`.
+Start the given `worker` to process jobs.
 
 ### \[Function\] (stop-worker worker)
 
@@ -75,11 +75,11 @@ Stop the given `worker` after processing its queued jobs.
 
 ### \[Function\] (kill-worker worker)
 
-Stop the given `worker` immediately.
+Stop the given `worker` immediately (outstanding jobs will be remained in its queue).
 
-### \[Function\] (add-job worker val)
+### \[Function\] (add-job worker-or-cluster val)
 
-Enqueue a new job `val`. It will be passed to a function specified for `make-worker`.
+Enqueue a new job `val` which will be passed to a function specified for `make-worker`.
 
 ### \[Function\] (next-job worker) => val, existsp
 
