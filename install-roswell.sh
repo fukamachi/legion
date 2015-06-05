@@ -40,6 +40,7 @@ ros -e '(format t "~%~a ~a up and running! (ASDF ~a)~%~%"
 
 # Setup ASDF source regisry
 ASDF_SR_CONF_DIR="$HOME/.config/common-lisp/source-registry.conf.d"
+ASDF_SR_CONF_FILE="$ASDF_SR_CONF_DIR/cl-travis.conf"
 LOCAL_LISP_TREE="$HOME/lisp"
 
 mkdir -p "$ASDF_SR_CONF_DIR"
