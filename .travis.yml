@@ -7,7 +7,7 @@ env:
     - LISP=ccl
 
 install:
-  - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/travis-install.sh | sh
+  - curl -L https://raw.githubusercontent.com/snmsts/roswell/master/scripts/install-for-ci.sh | sh
 
 script:
   - ros -s prove -s cl-coveralls
