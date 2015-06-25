@@ -21,6 +21,7 @@
            :make-worker
            :worker-status
            :worker-queue-count
+           :worker-idle-cond
            :start-worker
            :stop-worker
            :kill-worker
@@ -36,7 +37,8 @@
   process-fn
   (queue-lock (make-recursive-lock "queue-lock"))
   (wait-lock (make-recursive-lock "wait-lock"))
-  (wait-cond (make-condition-variable)))
+  (wait-cond (make-condition-variable))
+  (idle-cond (make-condition-variable)))
 
 (defmethod print-object ((object worker) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -56,6 +58,7 @@
                (when (eq (worker-status worker) :shutting)
                  (return))
                (setf (worker-status worker) :idle)
+               (condition-notify (worker-idle-cond worker))
                (with-recursive-lock-held (wait-lock)
                  (condition-wait wait-cond wait-lock)))
              (funcall process-fn worker))

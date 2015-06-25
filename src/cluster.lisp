@@ -3,15 +3,20 @@
   (:use :cl)
   (:import-from :legion.worker
                 :worker
+                :worker-status
                 :make-worker
                 :start-worker
                 :stop-worker
                 :kill-worker
-                :worker-thread)
+                :worker-thread
+                :worker-idle-cond)
   (:import-from :legion.scheduler
                 :make-round-robin-scheduler)
   (:import-from :bordeaux-threads
-                :join-thread)
+                :join-thread
+                :condition-wait
+                :make-recursive-lock
+                :with-recursive-lock-held)
   (:export :cluster
            :make-cluster
            :cluster-status
@@ -19,7 +24,8 @@
            :start-cluster
            :stop-cluster
            :kill-cluster
-           :add-job-to-cluster))
+           :add-job-to-cluster
+           :join-worker-threads))
 (in-package :legion.cluster)
 
 (defun make-workers-array (worker-num process-fn queue-size)
@@ -75,3 +81,15 @@
   (funcall (cluster-scheduler cluster)
            (cluster-workers cluster)
            job))
+
+(defun join-worker-threads (cluster)
+  (unless (eq (cluster-status cluster) :running)
+    (error "Cluster ~A is not running" cluster))
+  (let ((idle-lock (make-recursive-lock "idle-lock")))
+    (map nil
+         (lambda (worker)
+           (unless (eq (worker-status worker) :idle)
+             (with-recursive-lock-held (idle-lock)
+               (condition-wait (worker-idle-cond worker) idle-lock))))
+         (cluster-workers cluster)))
+  t)

@@ -19,7 +19,8 @@
                 :start-cluster
                 :stop-cluster
                 :kill-cluster
-                :add-job-to-cluster)
+                :add-job-to-cluster
+                :join-worker-threads)
   (:export :worker
            :make-worker
            :worker-status
@@ -36,7 +37,8 @@
            :cluster-workers
            :start-cluster
            :stop-cluster
-           :kill-cluster))
+           :kill-cluster
+           :join-worker-threads))
 (in-package :legion)
 
 (defun add-job (to job)

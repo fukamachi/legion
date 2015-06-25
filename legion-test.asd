@@ -12,6 +12,7 @@
   :author "Eitaro Fukamachi"
   :license "BSD 2-Clause"
   :depends-on (:legion
+               :local-time
                :prove)
   :components ((:module "t"
                 :components
