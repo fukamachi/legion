@@ -12,6 +12,8 @@
                 :worker-idle-cond)
   (:import-from :legion.scheduler
                 :make-round-robin-scheduler)
+  (:import-from :legion.error
+                :legion-error)
   (:import-from :bordeaux-threads
                 :join-thread
                 :condition-wait
@@ -75,12 +77,29 @@
   (setf (cluster-status cluster) :shutdown)
   cluster)
 
+(define-condition cluster-queue-overflow (legion-error)
+  ((cluster :initarg :cluster
+            :type cluster))
+  (:report (lambda (condition stream)
+             (format stream "All queues in ~A are full" (slot-value condition 'cluster)))))
+
 (defun add-job-to-cluster (cluster job)
   (when (eq (cluster-status cluster) :shutting)
     (return-from add-job-to-cluster nil))
-  (funcall (cluster-scheduler cluster)
-           (cluster-workers cluster)
-           job))
+  (let* ((workers (cluster-workers cluster))
+         (retry-count (length workers)))
+    (tagbody
+     retry
+       (let ((successp
+               (funcall (cluster-scheduler cluster)
+                        workers
+                        job)))
+         (unless successp
+           (decf retry-count)
+           (when (= retry-count 0)
+             (error 'cluster-queue-overflow :cluster cluster))
+           (go retry))))
+    t))
 
 (defun join-worker-threads (cluster)
   (unless (eq (cluster-status cluster) :running)

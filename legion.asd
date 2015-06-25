@@ -21,10 +21,11 @@
                :vom)
   :components ((:module "src"
                 :components
-                ((:file "legion" :depends-on ("worker" "cluster"))
+                ((:file "legion" :depends-on ("worker" "cluster" "error"))
                  (:file "worker")
-                 (:file "cluster" :depends-on ("worker" "scheduler"))
-                 (:file "scheduler" :depends-on ("worker")))))
+                 (:file "cluster" :depends-on ("worker" "scheduler" "error"))
+                 (:file "scheduler" :depends-on ("worker"))
+                 (:file "error"))))
   :description "Simple worker threads with a queue."
   :long-description
   #.(with-open-file (stream (merge-pathnames

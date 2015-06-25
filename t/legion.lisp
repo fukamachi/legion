@@ -5,7 +5,7 @@
         :prove))
 (in-package :legion-test)
 
-(plan 14)
+(plan 16)
 
 (let ((worker (make-worker (lambda (worker)
                              (declare (ignore worker))
@@ -126,5 +126,16 @@
   (let ((took (local-time:timestamp-difference (local-time:now) start))
         (from (* (/ task-count worker-count) 0.01)))
     (ok (<= from took (1+ from)) (format nil "Ends in ~A-~A seconds" from (1+ from)))))
+
+(let* ((bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
+                                         (*error-output* . ,*error-output*)))
+       (cluster (make-cluster 4
+                              (lambda (worker)
+                                (next-job worker))
+                              :queue-size 3)))
+  (subtest "Queue overflow"
+    (dotimes (i 12)
+      (add-job cluster i))
+    (is-error (add-job cluster 999) 'cluster-queue-overflow)))
 
 (finalize)

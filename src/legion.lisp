@@ -20,7 +20,10 @@
                 :stop-cluster
                 :kill-cluster
                 :add-job-to-cluster
-                :join-worker-threads)
+                :join-worker-threads
+                :cluster-queue-overflow)
+  (:import-from :legion.error
+                :legion-error)
   (:export :worker
            :make-worker
            :worker-status
@@ -38,7 +41,10 @@
            :start-cluster
            :stop-cluster
            :kill-cluster
-           :join-worker-threads))
+           :join-worker-threads
+
+           :legion-error
+           :cluster-queue-overflow))
 (in-package :legion)
 
 (defun add-job (to job)
