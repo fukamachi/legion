@@ -13,7 +13,7 @@
 (in-package :legion-asd)
 
 (defsystem legion
-  :version "0.1.0"
+  :version "0.1.1"
   :author "Eitaro Fukamachi"
   :license "BSD 2-Clause"
   :depends-on (:cl-speedy-queue
