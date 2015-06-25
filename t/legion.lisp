@@ -5,7 +5,7 @@
         :prove))
 (in-package :legion-test)
 
-(plan 13)
+(plan 14)
 
 (let ((worker (make-worker (lambda (worker)
                              (declare (ignore worker))
