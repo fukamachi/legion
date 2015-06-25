@@ -78,7 +78,7 @@
   cluster)
 
 (define-condition cluster-queue-overflow (legion-error)
-  ((cluster :initarg cluster
+  ((cluster :initarg :cluster
             :type cluster))
   (:report (lambda (condition stream)
              (format stream "All queues in ~A are full" (slot-value condition 'cluster)))))
