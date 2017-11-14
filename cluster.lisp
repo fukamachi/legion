@@ -7,17 +7,13 @@
                 #:start-worker
                 #:stop-worker
                 #:kill-worker
-                #:worker-thread
-                #:worker-idle-cond)
+                #:worker-thread)
   (:import-from #:legion/scheduler
                 #:make-round-robin-scheduler)
   (:import-from #:legion/error
                 #:legion-error)
   (:import-from #:bordeaux-threads
-                #:join-thread
-                #:condition-wait
-                #:make-recursive-lock
-                #:with-recursive-lock-held)
+                #:join-thread)
   (:export #:cluster
            #:make-cluster
            #:cluster-status
@@ -25,8 +21,7 @@
            #:start-cluster
            #:stop-cluster
            #:kill-cluster
-           #:add-job-to-cluster
-           #:join-worker-threads))
+           #:add-job-to-cluster))
 (in-package #:legion/cluster)
 
 (defun make-workers-array (worker-num process-fn queue)
@@ -85,15 +80,3 @@
                      job)
       (error "Failed to add a job"))
     t))
-
-(defun join-worker-threads (cluster)
-  (unless (eq (cluster-status cluster) :running)
-    (error "Cluster ~A is not running" cluster))
-  (let ((idle-lock (make-recursive-lock "idle-lock")))
-    (map nil
-         (lambda (worker)
-           (unless (eq (worker-status worker) :idle)
-             (with-recursive-lock-held (idle-lock)
-               (condition-wait (worker-idle-cond worker) idle-lock))))
-         (cluster-workers cluster)))
-  t)
