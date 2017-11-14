@@ -29,17 +29,17 @@
            #:join-worker-threads))
 (in-package #:legion/cluster)
 
-(defun make-workers-array (worker-num process-fn queue-size)
+(defun make-workers-array (worker-num process-fn queue)
   (let ((workers (make-array worker-num :element-type 'worker)))
     (dotimes (i worker-num workers)
       (setf (svref workers i)
             (make-worker process-fn
-                         :queue-size queue-size)))))
+                         :queue queue)))))
 
 (defstruct (cluster (:constructor make-cluster
-                        (worker-num process-fn &key (queue-size 128) scheduler
+                        (worker-num process-fn &key queue scheduler
                          &aux
-                           (workers (make-workers-array worker-num process-fn queue-size))
+                           (workers (make-workers-array worker-num process-fn queue))
                            (scheduler (or scheduler
                                           (make-round-robin-scheduler workers))))))
   (status :shutdown)
@@ -76,28 +76,14 @@
   (setf (cluster-status cluster) :shutdown)
   cluster)
 
-(define-condition cluster-queue-overflow (legion-error)
-  ((cluster :initarg :cluster
-            :type cluster))
-  (:report (lambda (condition stream)
-             (format stream "All queues in ~A are full" (slot-value condition 'cluster)))))
-
 (defun add-job-to-cluster (cluster job)
   (when (eq (cluster-status cluster) :shutting)
     (return-from add-job-to-cluster nil))
-  (let* ((workers (cluster-workers cluster))
-         (retry-count (length workers)))
-    (tagbody
-     retry
-       (let ((successp
-               (funcall (cluster-scheduler cluster)
-                        workers
-                        job)))
-         (unless successp
-           (decf retry-count)
-           (when (= retry-count 0)
-             (error 'cluster-queue-overflow :cluster cluster))
-           (go retry))))
+  (let ((workers (cluster-workers cluster)))
+    (unless (funcall (cluster-scheduler cluster)
+                     workers
+                     job)
+      (error "Failed to add a job"))
     t))
 
 (defun join-worker-threads (cluster)

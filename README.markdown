@@ -54,11 +54,11 @@ NOTE: Cluster doesn't guarantee the order of processing jobs.
 
 Base structure class of workers.
 
-### \[Function\] (make-worker process-fn &key (queue-size 128))
+### \[Function\] (make-worker process-fn &key queue)
 
 Create and return a worker thread which has a fixed-length queue. `process-fn` is a funcallable object which takes a single value.
 
-You can specify the value by specifying `:queue-size`. The default value is `128`.
+You can specify the value by specifying `:queue`.
 
 ### \[Function\] (worker-status worker)
 
@@ -92,7 +92,7 @@ Dequeue a job from `worker`'s queue.
 
 Base structure class of clusters.
 
-### \[Function\] (make-cluster worker-num process-fn &key (queue-size 128) scheduler)
+### \[Function\] (make-cluster worker-num process-fn &key queue scheduler)
 
 Create and return a cluster with `worker-num` workers with `process-fn`.
 

@@ -1,12 +1,11 @@
 (defpackage #:legion/worker
   (:use #:cl)
-  (:import-from #:cl-speedy-queue
+  (:import-from #:legion/queue
                 #:make-queue
                 #:enqueue
                 #:dequeue
                 #:queue-count
-                #:queue-empty-p
-                #:queue-full-p)
+                #:queue-empty-p)
   (:import-from #:bordeaux-threads
                 #:make-thread
                 #:destroy-thread
@@ -28,8 +27,8 @@
            #:next-job))
 (in-package #:legion/worker)
 
-(defstruct (worker (:constructor make-worker (process-fn &key (queue-size 128)
-                                              &aux (queue (make-queue queue-size)))))
+(defstruct (worker (:constructor make-worker (process-fn &key queue
+                                              &aux (queue (or queue (make-queue))))))
   (status :shutdown)
   thread
   queue
@@ -110,8 +109,7 @@ It raises an error if the WORKER is not running."
 (defun add-job-to-worker (worker val)
   "Enqueue VAL to WORKER's queue. This returns WORKER when the queueing has been succeeded; otherwise NIL is returned."
   (with-slots (status queue queue-lock wait-cond) worker
-    (when (or (eq status :shutting)
-              (queue-full-p queue))
+    (when (eq status :shutting)
       (return-from add-job-to-worker nil))
     (with-recursive-lock-held (queue-lock)
       (enqueue val queue))
