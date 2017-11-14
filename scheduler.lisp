@@ -1,10 +1,9 @@
-(in-package :cl-user)
-(defpackage legion.scheduler
-  (:use :cl)
-  (:import-from :legion.worker
-                :add-job-to-worker)
-  (:export :make-round-robin-scheduler))
-(in-package :legion.scheduler)
+(defpackage #:legion/scheduler
+  (:use #:cl)
+  (:import-from #:legion/worker
+                #:add-job-to-worker)
+  (:export #:make-round-robin-scheduler))
+(in-package #:legion/scheduler)
 
 (defun make-round-robin-scheduler (workers)
   (let ((worker-num (length workers))

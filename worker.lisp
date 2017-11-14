@@ -1,33 +1,32 @@
-(in-package :cl-user)
-(defpackage legion.worker
-  (:use :cl)
-  (:import-from :cl-speedy-queue
-                :make-queue
-                :enqueue
-                :dequeue
-                :queue-count
-                :queue-empty-p
-                :queue-full-p)
-  (:import-from :bordeaux-threads
-                :make-thread
-                :destroy-thread
-                :thread-alive-p
-                :condition-notify
-                :condition-wait
-                :make-condition-variable
-                :make-recursive-lock
-                :with-recursive-lock-held)
-  (:export :worker
-           :make-worker
-           :worker-status
-           :worker-queue-count
-           :worker-idle-cond
-           :start-worker
-           :stop-worker
-           :kill-worker
-           :add-job-to-worker
-           :next-job))
-(in-package :legion.worker)
+(defpackage #:legion/worker
+  (:use #:cl)
+  (:import-from #:cl-speedy-queue
+                #:make-queue
+                #:enqueue
+                #:dequeue
+                #:queue-count
+                #:queue-empty-p
+                #:queue-full-p)
+  (:import-from #:bordeaux-threads
+                #:make-thread
+                #:destroy-thread
+                #:thread-alive-p
+                #:condition-notify
+                #:condition-wait
+                #:make-condition-variable
+                #:make-recursive-lock
+                #:with-recursive-lock-held)
+  (:export #:worker
+           #:make-worker
+           #:worker-status
+           #:worker-queue-count
+           #:worker-idle-cond
+           #:start-worker
+           #:stop-worker
+           #:kill-worker
+           #:add-job-to-worker
+           #:next-job))
+(in-package #:legion/worker)
 
 (defstruct (worker (:constructor make-worker (process-fn &key (queue-size 128)
                                               &aux (queue (make-queue queue-size)))))

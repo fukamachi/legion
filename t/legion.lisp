@@ -1,9 +1,8 @@
-(in-package :cl-user)
-(defpackage legion-test
-  (:use :cl
-        :legion
-        :prove))
-(in-package :legion-test)
+(defpackage #:legion-test
+  (:use #:cl
+        #:legion
+        #:prove))
+(in-package #:legion-test)
 
 (plan 16)
 

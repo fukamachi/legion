@@ -1,34 +1,33 @@
-(in-package :cl-user)
-(defpackage legion.cluster
-  (:use :cl)
-  (:import-from :legion.worker
-                :worker
-                :worker-status
-                :make-worker
-                :start-worker
-                :stop-worker
-                :kill-worker
-                :worker-thread
-                :worker-idle-cond)
-  (:import-from :legion.scheduler
-                :make-round-robin-scheduler)
-  (:import-from :legion.error
-                :legion-error)
-  (:import-from :bordeaux-threads
-                :join-thread
-                :condition-wait
-                :make-recursive-lock
-                :with-recursive-lock-held)
-  (:export :cluster
-           :make-cluster
-           :cluster-status
-           :cluster-workers
-           :start-cluster
-           :stop-cluster
-           :kill-cluster
-           :add-job-to-cluster
-           :join-worker-threads))
-(in-package :legion.cluster)
+(defpackage #:legion/cluster
+  (:use #:cl)
+  (:import-from #:legion/worker
+                #:worker
+                #:worker-status
+                #:make-worker
+                #:start-worker
+                #:stop-worker
+                #:kill-worker
+                #:worker-thread
+                #:worker-idle-cond)
+  (:import-from #:legion/scheduler
+                #:make-round-robin-scheduler)
+  (:import-from #:legion/error
+                #:legion-error)
+  (:import-from #:bordeaux-threads
+                #:join-thread
+                #:condition-wait
+                #:make-recursive-lock
+                #:with-recursive-lock-held)
+  (:export #:cluster
+           #:make-cluster
+           #:cluster-status
+           #:cluster-workers
+           #:start-cluster
+           #:stop-cluster
+           #:kill-cluster
+           #:add-job-to-cluster
+           #:join-worker-threads))
+(in-package #:legion/cluster)
 
 (defun make-workers-array (worker-num process-fn queue-size)
   (let ((workers (make-array worker-num :element-type 'worker)))
