@@ -6,9 +6,10 @@
 
 (plan 14)
 
-(let ((worker (make-worker (lambda (worker)
-                             (declare (ignore worker))
-                             (sleep 0.3)))))
+(let ((worker (make-instance 'worker
+                             :process-fn (lambda (job)
+                                           (declare (ignore job))
+                                           (sleep 0.3)))))
   (subtest "can make"
     (ok worker)
     (is (worker-status worker) :shutdown)
@@ -28,12 +29,10 @@
 (let* ((bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
                                         (*error-output* . ,*error-output*)))
        (results (make-array 0 :adjustable t :fill-pointer 0))
-       (worker (make-worker (lambda (worker)
-                              (sleep 0.1)
-                              (multiple-value-bind (val existsp)
-                                  (fetch-job worker)
-                                (when existsp
-                                  (vector-push-extend (* val 2) results)))))))
+       (worker (make-instance 'worker
+                              :process-fn (lambda (job)
+                                            (sleep 0.1)
+                                            (vector-push-extend (* job 2) results)))))
   (subtest "can make"
     (ok worker)
     (is (worker-status worker) :shutdown)
@@ -73,13 +72,10 @@
                                         (*error-output* . ,*error-output*)))
        (results-lock (bt:make-recursive-lock))
        (results (make-array 0 :adjustable t :fill-pointer 0))
-       (cluster (make-cluster 4 (lambda (worker)
+       (cluster (make-cluster 4 (lambda (job)
                                   (sleep 0.1)
-                                  (multiple-value-bind (val existsp)
-                                      (fetch-job worker)
-                                    (when existsp
-                                      (bt:with-recursive-lock-held (results-lock)
-                                        (vector-push-extend (* val 2) results))))))))
+                                  (bt:with-recursive-lock-held (results-lock)
+                                    (vector-push-extend (* job 2) results))))))
   (ok cluster "can make")
 
   (subtest "can add-job"
@@ -111,9 +107,9 @@
        (task-count 1000)
        (worker-count 2)
        (cluster (make-cluster worker-count
-                              (lambda (worker)
-                                (sleep 0.01)
-                                (fetch-job worker))))
+                              (lambda (job)
+                                (declare (ignore job))
+                                (sleep 0.01))))
        start)
   (subtest "process 1000 jobs"
     (dotimes (i task-count)

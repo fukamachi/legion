@@ -16,7 +16,6 @@
                 #:make-recursive-lock
                 #:with-recursive-lock-held)
   (:export #:worker
-           #:make-worker
            #:worker-status
            #:worker-queue-count
            #:fetch-job
@@ -27,14 +26,25 @@
            #:add-job))
 (in-package #:legion/worker)
 
-(defstruct (worker (:constructor make-worker (process-fn &key queue
-                                              &aux (queue (or queue (make-queue))))))
-  (status :shutdown)
-  thread
-  queue
-  process-fn
-  (wait-lock (make-recursive-lock "wait-lock"))
-  (wait-cond (make-condition-variable)))
+(defclass worker ()
+  ((status :initform :shutdown
+           :accessor worker-status)
+   (queue :initarg :queue
+          :initform (make-queue)
+          :accessor worker-queue)
+   (process-fn :initarg :process-fn
+               :reader worker-process-fn)
+
+   (thread :initform nil
+           :reader worker-thread)
+   (wait-lock :initform (make-recursive-lock "wait-lock")
+              :reader worker-wait-lock)
+   (wait-cond :initform (make-condition-variable)
+              :reader worker-wait-cond)))
+
+(defun worker-queue-count (worker)
+  "Return the number of outstanding jobs."
+  (queue-count (worker-queue worker)))
 
 (defmethod print-object ((object worker) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -45,7 +55,7 @@
 (defgeneric fetch-job (worker)
   (:documentation "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag.")
   (:method ((worker worker))
-    (with-slots (queue) worker
+    (let ((queue (worker-queue worker)))
       (if (queue-empty-p queue)
           (values nil nil)
           (values (dequeue queue) t)))))
@@ -74,9 +84,6 @@
       (vom:info "worker is shutting down. bye.")
       (setf (worker-status worker) :shutdown))))
 
-(defun worker-queue-count (worker)
-  "Return the number of outstanding jobs."
-  (queue-count (worker-queue worker)))
 
 (defgeneric start (worker)
   (:documentation "Start the given WORKER.

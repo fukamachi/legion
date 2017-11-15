@@ -12,7 +12,8 @@
 
 ```common-lisp
 (defparameter *worker*
-  (make-worker
+  (make-instance 'worker
+    :process-fn
     (let ((out *standard-output*))
       (lambda (job)
         (format out "Processed: ~S~%" job)))))
@@ -46,13 +47,9 @@ NOTE: Cluster doesn't guarantee the order of processing jobs.
 
 ## Functions
 
-### \[Structure\] worker
+### \[Class\] worker
 
-Base structure class of workers.
-
-### \[Function\] (make-worker process-fn &key queue)
-
-Create and return a worker thread which has a fixed-length queue. `process-fn` is a funcallable object which takes a single value.
+Base class of workers.
 
 You can specify the value by specifying `:queue`.
 

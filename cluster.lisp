@@ -3,12 +3,13 @@
   (:import-from #:legion/worker
                 #:worker
                 #:worker-status
-                #:make-worker
                 #:start
                 #:stop
                 #:kill
                 #:add-job
                 #:worker-thread)
+  (:import-from #:legion/queue
+                #:make-queue)
   (:import-from #:legion/scheduler
                 #:make-round-robin-scheduler)
   (:import-from #:legion/error
@@ -29,11 +30,12 @@
   (let ((workers (make-array worker-num :element-type 'worker)))
     (dotimes (i worker-num workers)
       (setf (svref workers i)
-            (make-worker process-fn
-                         :queue queue)))))
+            (make-instance 'worker
+                           :process-fn process-fn
+                           :queue queue)))))
 
 (defstruct (cluster (:constructor make-cluster
-                        (worker-num process-fn &key queue scheduler
+                        (worker-num process-fn &key (queue (make-queue)) scheduler
                          &aux
                            (workers (make-workers-array worker-num process-fn queue))
                            (scheduler (or scheduler

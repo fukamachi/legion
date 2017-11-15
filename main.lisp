@@ -3,7 +3,6 @@
   (:use #:cl)
   (:import-from #:legion/worker
                 #:worker
-                #:make-worker
                 #:worker-status
                 #:worker-queue-count
                 #:fetch-job
@@ -20,7 +19,6 @@
   (:import-from #:legion/error
                 #:legion-error)
   (:export #:worker
-           #:make-worker
            #:worker-status
            #:worker-queue-count
            #:fetch-job
