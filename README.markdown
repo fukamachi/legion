@@ -19,7 +19,7 @@
             (next-job worker)
           (format out "Processed: ~S~%" val))))))
 
-(start-worker *worker*)
+(start *worker*)
 
 (add-job *worker* 10)
 (add-job *worker* "Hi")
@@ -38,12 +38,12 @@
             (next-job worker)
           (format out "Processed: ~S~%" val))))))
 
-(start-cluster *cluster*)
+(start *cluster*)
 
 (add-job *cluster* 10)
 (add-job *cluster* "Hi")
 
-(stop-cluster *cluster*)
+(stop *cluster*)
 ```
 
 NOTE: Cluster doesn't guarantee the order of processing jobs.
@@ -68,23 +68,23 @@ Return the worker's status which is specifically one of `:running`, `:idle`, `:s
 
 Return the number of outstanding jobs of the `worker`.
 
-### \[Function\] (start-worker worker)
+### \[Method\] (start worker-or-cluster)
 
-Start the given `worker` to process jobs.
+Start the given `worker` or `cluster` to process jobs.
 
-### \[Function\] (stop-worker worker)
+### \[Method\] (stop worker-or-cluster)
 
-Stop the given `worker` after processing its queued jobs.
+Stop the given `worker` or `cluster` after processing its queued jobs.
 
-### \[Function\] (kill-worker worker)
+### \[Method\] (kill worker-or-cluster)
 
-Stop the given `worker` immediately (outstanding jobs will be remained in its queue).
+Stop the given `worker` or `cluster` immediately (outstanding jobs will be remained in its queue).
 
-### \[Function\] (add-job worker-or-cluster val)
+### \[Method\] (add-job worker-or-cluster val)
 
 Enqueue a new job `val` which will be passed to a function specified for `make-worker`.
 
-### \[Function\] (next-job worker) => val, existsp
+### \[Method\] (next-job worker) => val, existsp
 
 Dequeue a job from `worker`'s queue.
 

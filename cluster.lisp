@@ -4,9 +4,10 @@
                 #:worker
                 #:worker-status
                 #:make-worker
-                #:start-worker
-                #:stop-worker
-                #:kill-worker
+                #:start
+                #:stop
+                #:kill
+                #:add-job
                 #:worker-thread)
   (:import-from #:legion/scheduler
                 #:make-round-robin-scheduler)
@@ -18,10 +19,10 @@
            #:make-cluster
            #:cluster-status
            #:cluster-workers
-           #:start-cluster
-           #:stop-cluster
-           #:kill-cluster
-           #:add-job-to-cluster))
+           #:start
+           #:stop
+           #:kill
+           #:add-job))
 (in-package #:legion/cluster)
 
 (defun make-workers-array (worker-num process-fn queue)
@@ -47,16 +48,16 @@
             (cluster-status object)
             (length (cluster-workers object)))))
 
-(defun start-cluster (cluster)
+(defmethod start ((cluster cluster))
   (loop for worker across (cluster-workers cluster)
-        do (start-worker worker))
+        do (start worker))
   (setf (cluster-status cluster) :running)
   (vom:info "cluster has started.")
   cluster)
 
-(defun stop-cluster (cluster)
+(defmethod stop ((cluster cluster))
   (loop for worker across (cluster-workers cluster)
-        do (stop-worker worker))
+        do (stop worker))
   (setf (cluster-status cluster) :shutting)
   (loop for worker across (cluster-workers cluster)
         for thread = (worker-thread worker)
@@ -65,15 +66,15 @@
   (setf (cluster-status cluster) :shutdown)
   cluster)
 
-(defun kill-cluster (cluster)
+(defmethod kill ((cluster cluster))
   (loop for worker across (cluster-workers cluster)
-        do (kill-worker worker))
+        do (kill worker))
   (setf (cluster-status cluster) :shutdown)
   cluster)
 
-(defun add-job-to-cluster (cluster job)
+(defmethod add-job ((cluster cluster) job)
   (when (eq (cluster-status cluster) :shutting)
-    (return-from add-job-to-cluster nil))
+    (return-from add-job nil))
   (let ((workers (cluster-workers cluster)))
     (unless (funcall (cluster-scheduler cluster)
                      workers

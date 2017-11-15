@@ -6,29 +6,25 @@
                 #:make-worker
                 #:worker-status
                 #:worker-queue-count
-                #:start-worker
-                #:stop-worker
-                #:kill-worker
-                #:add-job-to-worker
+                #:start
+                #:stop
+                #:kill
+                #:add-job
                 #:next-job)
   (:import-from #:legion/cluster
                 #:cluster
                 #:make-cluster
                 #:cluster-status
-                #:cluster-workers
-                #:start-cluster
-                #:stop-cluster
-                #:kill-cluster
-                #:add-job-to-cluster)
+                #:cluster-workers)
   (:import-from #:legion/error
                 #:legion-error)
   (:export #:worker
            #:make-worker
            #:worker-status
            #:worker-queue-count
-           #:start-worker
-           #:stop-worker
-           #:kill-worker
+           #:start
+           #:stop
+           #:kill
            #:add-job
            #:next-job
 
@@ -36,14 +32,6 @@
            #:make-cluster
            #:cluster-status
            #:cluster-workers
-           #:start-cluster
-           #:stop-cluster
-           #:kill-cluster
 
            #:legion-error))
 (in-package #:legion)
-
-(defun add-job (to job)
-  (etypecase to
-    (cluster (add-job-to-cluster to job))
-    (worker (add-job-to-worker to job))))

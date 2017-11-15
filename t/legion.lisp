@@ -15,12 +15,12 @@
     (is (worker-queue-count worker) 0))
 
   (subtest "can start"
-    (ok (start-worker worker) "start-worker")
+    (ok (start worker) "start-worker")
     (is (worker-status worker) :idle "status is idle")
     (is (worker-queue-count worker) 0 "queue is empty"))
 
   (subtest "can stop"
-    (ok (stop-worker worker) "stop-worker")
+    (ok (stop worker) "stop-worker")
     (sleep 0.5)
     (is (worker-status worker) :shutdown "status is shutdown")
     (is (worker-queue-count worker) 0 "queue is empty")))
@@ -46,7 +46,7 @@
     (is results #() :test #'equalp))
 
   (subtest "can start"
-    (ok (start-worker worker) "start-worker")
+    (ok (start worker) "start-worker")
     (is (worker-status worker) :running "status is running")
     (is results #() :test #'equalp))
 
@@ -64,7 +64,7 @@
 
   (subtest "can stop"
     (is (worker-queue-count worker) 0 "queue is empty")
-    (ok (stop-worker worker) "stop-worker")
+    (ok (stop worker) "stop-worker")
     (is (worker-status worker) :shutdown "status is shutdown")
     (is (worker-queue-count worker) 0 "queue is empty")
     (is results #(256 0 6 12 18 24) :test #'equalp)))
@@ -87,7 +87,7 @@
     (is results #() :test #'equalp))
 
   (subtest "can start"
-    (ok (start-cluster cluster) "start-cluster")
+    (ok (start cluster) "start-cluster")
     (is results #() :test #'equalp))
 
   (sleep 0.3)
@@ -100,7 +100,7 @@
   (sleep 1)
 
   (subtest "can stop"
-    (ok (stop-cluster cluster))
+    (ok (stop cluster))
     (is (cluster-status cluster) :shutdown "status is shutdown")
     (is (sort results #'<)
         #(0 6 12 18 24 256)
@@ -118,14 +118,14 @@
   (subtest "process 1000 jobs"
     (dotimes (i task-count)
       (add-job cluster i))
+    (start cluster)
     (setf start (local-time:now))
-    (start-cluster cluster)
     (loop until (every (lambda (worker)
                          (eq (worker-status worker) :idle))
                        (cluster-workers cluster))
           do (sleep 0.1))
     (let ((took (local-time:timestamp-difference (local-time:now) start))
           (from (* (/ task-count worker-count) 0.01)))
-      (ok (<= from took (1+ from)) (format nil "Ends in ~A-~A seconds" from (1+ from))))))
+      (ok (<= from took (* from 1.3)) (format nil "Ends in ~A-~A seconds" from (* from 1.3))))))
 
 (finalize)

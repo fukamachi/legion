@@ -19,10 +19,10 @@
            #:make-worker
            #:worker-status
            #:worker-queue-count
-           #:start-worker
-           #:stop-worker
-           #:kill-worker
-           #:add-job-to-worker
+           #:start
+           #:stop
+           #:kill
+           #:add-job
            #:next-job))
 (in-package #:legion/worker)
 
@@ -64,62 +64,67 @@
   "Return the number of outstanding jobs."
   (queue-count (worker-queue worker)))
 
-(defun start-worker (worker)
-  "Start the given WORKER.
-It raises an error if the WORKER is already running."
-  (with-slots (thread status) worker
-    (when thread
-      (error "Worker is already running."))
-    (setf status :running)
-    (setf thread
-          (make-thread (make-thread-function worker)
-                       :name "legion")))
-  (vom:info "worker has started.")
-  worker)
+(defgeneric start (worker)
+  (:documentation "Start the given WORKER.
+It raises an error if the WORKER is already running.")
+  (:method ((worker worker))
+    (with-slots (thread status) worker
+      (when thread
+        (error "Worker is already running."))
+      (setf status :running)
+      (setf thread
+            (make-thread (make-thread-function worker)
+                         :name "legion")))
+    (vom:info "worker has started.")
+    worker))
 
-(defun stop-worker (worker)
-  "Stop the given WORKER after processing its queued jobs.
-It raises an error if the WORKER is not running."
-  (with-slots (thread status) worker
-    (unless thread
-      (error "Worker is not running."))
-    (if (eq status :idle)
-        (kill-worker worker)
-        (progn
-          (setf status :shutting)
-          (vom:info "worker is going to be shutted down."))))
-  worker)
+(defgeneric stop (worker)
+  (:documentation "Stop the given WORKER after processing its queued jobs.
+It raises an error if the WORKER is not running.")
+  (:method ((worker worker))
+    (with-slots (thread status) worker
+      (unless thread
+        (error "Worker is not running."))
+      (if (eq status :idle)
+          (kill worker)
+          (progn
+            (setf status :shutting)
+            (vom:info "worker is going to be shutted down."))))
+    worker))
 
-(defun kill-worker (worker)
-  "Stop the given WORKER immediately.
-It raises an error if the WORKER is not running."
-  (with-slots (thread status) worker
-    (unless thread
-      (error "Worker is not running"))
-    (when (thread-alive-p thread)
-      (destroy-thread thread))
-    (vom:info "worker has been killed.")
-    (setf thread nil
-          status :shutdown))
-  worker)
+(defgeneric kill (worker)
+  (:documentation "Stop the given WORKER immediately.
+It raises an error if the WORKER is not running.")
+  (:method ((worker worker))
+    (with-slots (thread status) worker
+      (unless thread
+        (error "Worker is not running"))
+      (when (thread-alive-p thread)
+        (destroy-thread thread))
+      (vom:info "worker has been killed.")
+      (setf thread nil
+            status :shutdown))
+    worker))
 
-(defun add-job-to-worker (worker val)
-  "Enqueue VAL to WORKER's queue. This returns WORKER when the queueing has been succeeded; otherwise NIL is returned."
-  (with-slots (status queue queue-lock wait-cond) worker
-    (when (eq status :shutting)
-      (return-from add-job-to-worker nil))
-    (with-recursive-lock-held (queue-lock)
-      (enqueue val queue))
-    (when (eq status :idle)
-      (condition-notify wait-cond)
-      (setf status :running)))
-  worker)
+(defgeneric add-job (worker val)
+  (:documentation "Enqueue VAL to WORKER's queue. This returns WORKER when the queueing has been succeeded; otherwise NIL is returned.")
+  (:method ((worker worker) val)
+    (with-slots (status queue queue-lock wait-cond) worker
+      (when (eq status :shutting)
+        (return-from add-job nil))
+      (with-recursive-lock-held (queue-lock)
+        (enqueue val queue))
+      (when (eq status :idle)
+        (condition-notify wait-cond)
+        (setf status :running)))
+    worker))
 
-(defun next-job (worker)
-  "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag."
-  (with-slots (queue queue-lock) worker
-    (if (queue-empty-p queue)
-        (values nil nil)
-        (values (with-recursive-lock-held (queue-lock)
-                  (dequeue queue))
-                t))))
+(defgeneric next-job (worker)
+  (:documentation "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag.")
+  (:method ((worker worker))
+    (with-slots (queue queue-lock) worker
+      (if (queue-empty-p queue)
+          (values nil nil)
+          (values (with-recursive-lock-held (queue-lock)
+                    (dequeue queue))
+                  t)))))
