@@ -17,13 +17,15 @@
                 #:with-recursive-lock-held)
   (:export #:worker
            #:worker-status
+           #:worker-queue
            #:worker-queue-count
            #:fetch-job
            #:process-job
            #:start
            #:stop
            #:kill
-           #:add-job))
+           #:add-job
+           #:wakenup))
 (in-package #:legion/worker)
 
 (defclass worker ()
@@ -135,3 +137,9 @@ It raises an error if the WORKER is not running.")
         (condition-notify wait-cond)
         (setf status :running)))
     worker))
+
+(defun wakenup (worker)
+  (with-slots (status wait-cond) worker
+    (when (eq status :idle)
+      (condition-notify wait-cond)
+      (setf status :running))))

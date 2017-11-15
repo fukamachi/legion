@@ -3,15 +3,17 @@
   (:import-from #:legion/worker
                 #:worker
                 #:worker-status
+                #:worker-queue
+                #:worker-thread
                 #:start
                 #:stop
                 #:kill
                 #:add-job
-                #:worker-thread)
+                #:wakenup)
   (:import-from #:legion/queue
-                #:make-queue)
-  (:import-from #:legion/scheduler
-                #:make-round-robin-scheduler)
+                #:make-queue
+                #:enqueue
+                #:queue-empty-p)
   (:import-from #:legion/error
                 #:legion-error)
   (:import-from #:bordeaux-threads
@@ -28,17 +30,22 @@
 (defclass cluster ()
   ((status :initform :shutdown
            :accessor cluster-status)
-   (scheduler :initarg :scheduler
-              :accessor cluster-scheduler)
+   (queue :initarg :queue
+          :initform (make-queue)
+          :accessor cluster-queue)
 
    (workers :initarg :workers
             :initform '()
             :reader cluster-workers)))
 
-(defmethod initialize-instance :after ((cluster cluster) &key workers &allow-other-keys)
-  (unless (slot-boundp cluster 'scheduler)
-    (setf (slot-value cluster 'scheduler)
-          (make-round-robin-scheduler workers))))
+(defmethod initialize-instance :after ((cluster cluster) &rest initargs &key workers &allow-other-keys)
+  (declare (ignore initargs))
+  (mapc (lambda (worker)
+          (unless (queue-empty-p (worker-queue worker))
+            (error "Worker queue is not empty"))
+          (setf (worker-queue worker)
+                (cluster-queue cluster)))
+        workers))
 
 (defmethod print-object ((object cluster) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -71,6 +78,8 @@
 (defmethod add-job ((cluster cluster) job)
   (when (eq (cluster-status cluster) :shutting)
     (return-from add-job nil))
-  (unless (funcall (cluster-scheduler cluster) job)
-    (error "Failed to add a job"))
-  t)
+  (enqueue job (cluster-queue cluster))
+  (let ((idle-worker (find :idle (cluster-workers cluster) :key #'worker-status)))
+    (when idle-worker
+      (wakenup idle-worker)))
+  cluster)
