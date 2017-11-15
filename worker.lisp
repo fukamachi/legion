@@ -33,7 +33,6 @@
   thread
   queue
   process-fn
-  (queue-lock (make-recursive-lock "queue-lock"))
   (wait-lock (make-recursive-lock "wait-lock"))
   (wait-cond (make-condition-variable)))
 
@@ -46,12 +45,10 @@
 (defgeneric fetch-job (worker)
   (:documentation "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag.")
   (:method ((worker worker))
-    (with-slots (queue queue-lock) worker
+    (with-slots (queue) worker
       (if (queue-empty-p queue)
           (values nil nil)
-          (values (with-recursive-lock-held (queue-lock)
-                    (dequeue queue))
-                  t)))))
+          (values (dequeue queue) t)))))
 
 (defgeneric process-job (worker job)
   (:method ((worker worker) job)
@@ -126,11 +123,10 @@ It raises an error if the WORKER is not running.")
 (defgeneric add-job (worker val)
   (:documentation "Enqueue VAL to WORKER's queue. This returns WORKER when the queueing has been succeeded; otherwise NIL is returned.")
   (:method ((worker worker) val)
-    (with-slots (status queue queue-lock wait-cond) worker
+    (with-slots (status queue wait-cond) worker
       (when (eq status :shutting)
         (return-from add-job nil))
-      (with-recursive-lock-held (queue-lock)
-        (enqueue val queue))
+      (enqueue val queue)
       (when (eq status :idle)
         (condition-notify wait-cond)
         (setf status :running)))
