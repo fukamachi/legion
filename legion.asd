@@ -2,7 +2,7 @@
   :class :package-inferred-system
   :version "0.1.1"
   :author "Eitaro Fukamachi"
-  :license "BSD 2-Clause"
+  :license "BSD 3-Clause"
   :depends-on ("vom"
                "legion/main")
   :description "Simple worker threads with a queue."
