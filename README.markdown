@@ -24,7 +24,7 @@
 (add-job *worker* 10)
 (add-job *worker* "Hi")
 
-(stop-worker *worker*)
+(stop *worker*)
 ```
 
 ### Cluster
