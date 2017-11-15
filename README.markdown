@@ -16,7 +16,7 @@
     (let ((out *standard-output*))
       (lambda (worker)
         (multiple-value-bind (val existsp)
-            (next-job worker)
+            (fetch-job worker)
           (format out "Processed: ~S~%" val))))))
 
 (start *worker*)
@@ -35,7 +35,7 @@
     (let ((out *standard-output*))
       (lambda (worker)
         (multiple-value-bind (val existsp)
-            (next-job worker)
+            (fetch-job worker)
           (format out "Processed: ~S~%" val))))))
 
 (start *cluster*)
@@ -84,7 +84,7 @@ Stop the given `worker` or `cluster` immediately (outstanding jobs will be remai
 
 Enqueue a new job `val` which will be passed to a function specified for `make-worker`.
 
-### \[Method\] (next-job worker) => val, existsp
+### \[Method\] (fetch-job worker) => val, existsp
 
 Dequeue a job from `worker`'s queue.
 

@@ -31,7 +31,7 @@
        (worker (make-worker (lambda (worker)
                               (sleep 0.1)
                               (multiple-value-bind (val existsp)
-                                  (next-job worker)
+                                  (fetch-job worker)
                                 (when existsp
                                   (vector-push-extend (* val 2) results)))))))
   (subtest "can make"
@@ -76,7 +76,7 @@
        (cluster (make-cluster 4 (lambda (worker)
                                   (sleep 0.1)
                                   (multiple-value-bind (val existsp)
-                                      (next-job worker)
+                                      (fetch-job worker)
                                     (when existsp
                                       (bt:with-recursive-lock-held (results-lock)
                                         (vector-push-extend (* val 2) results))))))))
@@ -113,7 +113,7 @@
        (cluster (make-cluster worker-count
                               (lambda (worker)
                                 (sleep 0.01)
-                                (next-job worker))))
+                                (fetch-job worker))))
        start)
   (subtest "process 1000 jobs"
     (dotimes (i task-count)

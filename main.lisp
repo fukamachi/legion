@@ -10,7 +10,7 @@
                 #:stop
                 #:kill
                 #:add-job
-                #:next-job)
+                #:fetch-job)
   (:import-from #:legion/cluster
                 #:cluster
                 #:make-cluster
@@ -26,7 +26,7 @@
            #:stop
            #:kill
            #:add-job
-           #:next-job
+           #:fetch-job
 
            #:cluster
            #:make-cluster

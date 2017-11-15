@@ -23,7 +23,7 @@
            #:stop
            #:kill
            #:add-job
-           #:next-job))
+           #:fetch-job))
 (in-package #:legion/worker)
 
 (defstruct (worker (:constructor make-worker (process-fn &key queue
@@ -119,7 +119,7 @@ It raises an error if the WORKER is not running.")
         (setf status :running)))
     worker))
 
-(defgeneric next-job (worker)
+(defgeneric fetch-job (worker)
   (:documentation "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag.")
   (:method ((worker worker))
     (with-slots (queue queue-lock) worker
