@@ -25,14 +25,6 @@
            #:add-job))
 (in-package #:legion/cluster)
 
-(defun make-workers-array (worker-num process-fn queue)
-  (let ((workers (make-array worker-num :element-type 'worker)))
-    (dotimes (i worker-num workers)
-      (setf (svref workers i)
-            (make-instance 'worker
-                           :process-fn process-fn
-                           :queue queue)))))
-
 (defclass cluster ()
   ((status :initform :shutdown
            :accessor cluster-status)

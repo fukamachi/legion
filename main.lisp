@@ -26,10 +26,24 @@
            #:stop
            #:kill
            #:add-job
+           #:make-worker
 
            #:cluster
            #:cluster-status
            #:cluster-workers
+           #:make-cluster
 
            #:legion-error))
 (in-package #:legion)
+
+(defun make-worker (process-fn &rest initargs)
+  (apply #'make-instance 'worker
+         :process-fn process-fn
+         initargs))
+
+(defun make-cluster (worker-num process-fn &rest initargs)
+  (apply #'make-instance 'cluster
+         :workers
+         (loop repeat worker-num
+               collect (make-worker process-fn))
+         initargs))
