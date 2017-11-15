@@ -30,7 +30,9 @@
 
 ```common-lisp
 (defparameter *cluster*
-  (make-cluster 4
+  (make-instance 'cluster
+    :worker-num 4
+    :process-fn
     (let ((out *standard-output*))
       (lambda (job)
         (format out "Processed: ~S~%" job)))))
@@ -81,15 +83,9 @@ Enqueue a new job `val` which will be passed to a function specified for `make-w
 
 Dequeue a job from `worker`'s queue.
 
-### \[Structure\] cluster
+### \[Class\] cluster
 
-Base structure class of clusters.
-
-### \[Function\] (make-cluster worker-num process-fn &key queue scheduler)
-
-Create and return a cluster with `worker-num` workers with `process-fn`.
-
-You can specify a `scheduler` function which takes exact 2 arguments -- workers and a job -- for task-scheduling. The default is round-robin scheduler.
+Base class of clusters.
 
 ### \[Function\] (cluster-status cluster)
 

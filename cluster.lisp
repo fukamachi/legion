@@ -17,7 +17,6 @@
   (:import-from #:bordeaux-threads
                 #:join-thread)
   (:export #:cluster
-           #:make-cluster
            #:cluster-status
            #:cluster-workers
            #:start
@@ -34,15 +33,22 @@
                            :process-fn process-fn
                            :queue queue)))))
 
-(defstruct (cluster (:constructor make-cluster
-                        (worker-num process-fn &key (queue (make-queue)) scheduler
-                         &aux
-                           (workers (make-workers-array worker-num process-fn queue))
-                           (scheduler (or scheduler
-                                          (make-round-robin-scheduler workers))))))
-  (status :shutdown)
-  workers
-  scheduler)
+(defclass cluster ()
+  ((status :initform :shutdown
+           :accessor cluster-status)
+   (scheduler :initarg :scheduler
+              :accessor cluster-scheduler)
+
+   (workers :initform '()
+            :reader cluster-workers)))
+
+(defmethod initialize-instance :after ((cluster cluster) &key worker-num process-fn (queue (make-queue))
+                                       &allow-other-keys)
+  (let ((workers (make-workers-array worker-num process-fn queue)))
+    (setf (slot-value cluster 'workers) workers)
+    (unless (slot-boundp cluster 'scheduler)
+      (setf (slot-value cluster 'scheduler)
+            (make-round-robin-scheduler workers)))))
 
 (defmethod print-object ((object cluster) stream)
   (print-unreadable-object (object stream :type t :identity t)

@@ -72,10 +72,12 @@
                                         (*error-output* . ,*error-output*)))
        (results-lock (bt:make-recursive-lock))
        (results (make-array 0 :adjustable t :fill-pointer 0))
-       (cluster (make-cluster 4 (lambda (job)
-                                  (sleep 0.1)
-                                  (bt:with-recursive-lock-held (results-lock)
-                                    (vector-push-extend (* job 2) results))))))
+       (cluster (make-instance 'cluster
+                               :worker-num 4
+                               :process-fn (lambda (job)
+                                             (sleep 0.1)
+                                             (bt:with-recursive-lock-held (results-lock)
+                                               (vector-push-extend (* job 2) results))))))
   (ok cluster "can make")
 
   (subtest "can add-job"
@@ -106,10 +108,12 @@
                                         (*error-output* . ,*error-output*)))
        (task-count 1000)
        (worker-count 2)
-       (cluster (make-cluster worker-count
-                              (lambda (job)
-                                (declare (ignore job))
-                                (sleep 0.01))))
+       (cluster (make-instance 'cluster
+                               :worker-num worker-count
+                               :process-fn
+                               (lambda (job)
+                                 (declare (ignore job))
+                                 (sleep 0.01))))
        start)
   (subtest "process 1000 jobs"
     (dotimes (i task-count)

@@ -13,7 +13,6 @@
                 #:add-job)
   (:import-from #:legion/cluster
                 #:cluster
-                #:make-cluster
                 #:cluster-status
                 #:cluster-workers)
   (:import-from #:legion/error
@@ -29,7 +28,6 @@
            #:add-job
 
            #:cluster
-           #:make-cluster
            #:cluster-status
            #:cluster-workers
 

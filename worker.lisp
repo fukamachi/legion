@@ -55,10 +55,7 @@
 (defgeneric fetch-job (worker)
   (:documentation "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag.")
   (:method ((worker worker))
-    (let ((queue (worker-queue worker)))
-      (if (queue-empty-p queue)
-          (values nil nil)
-          (values (dequeue queue) t)))))
+    (dequeue (worker-queue worker))))
 
 (defgeneric process-job (worker job)
   (:method ((worker worker) job)

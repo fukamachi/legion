@@ -63,11 +63,16 @@
          (queue-to-enqueue queue)))))
 
 (defun dequeue (queue)
-  (bt:with-lock-held ((queue-lock queue))
-    (prog1
-        (cl-speedy-queue:dequeue (queue-primary queue))
-      (when (need-to-tidy-p queue)
-        (tidy queue)))))
+  (let ((primary-queue (queue-primary queue)))
+    (bt:with-lock-held ((queue-lock queue))
+      (if (cl-speedy-queue:queue-empty-p primary-queue)
+          (values nil nil)
+          (values
+           (prog1
+               (cl-speedy-queue:dequeue primary-queue)
+             (when (need-to-tidy-p queue)
+               (tidy queue)))
+           t)))))
 
 (defun queue-empty-p (queue)
   (cl-speedy-queue:queue-empty-p
