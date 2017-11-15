@@ -32,8 +32,6 @@
    (queue :initarg :queue
           :initform (make-queue)
           :accessor worker-queue)
-   (process-fn :initarg :process-fn
-               :reader worker-process-fn)
 
    (thread :initform nil
            :reader worker-thread)
@@ -57,9 +55,7 @@
   (:method ((worker worker))
     (dequeue (worker-queue worker))))
 
-(defgeneric process-job (worker job)
-  (:method ((worker worker) job)
-    (funcall (worker-process-fn worker) job)))
+(defgeneric process-job (worker job))
 
 (defgeneric run (worker)
   (:method ((worker worker))

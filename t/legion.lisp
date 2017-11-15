@@ -6,10 +6,13 @@
 
 (plan 14)
 
-(let ((worker (make-instance 'worker
-                             :process-fn (lambda (job)
-                                           (declare (ignore job))
-                                           (sleep 0.3)))))
+(defclass sleep-worker (worker)
+  ((sec :initarg :sec)))
+(defmethod process-job ((worker sleep-worker) job)
+  (declare (ignore job))
+  (sleep (slot-value worker 'sec)))
+
+(let ((worker (make-instance 'sleep-worker :sec 0.3)))
   (subtest "can make"
     (ok worker)
     (is (worker-status worker) :shutdown)
@@ -26,13 +29,19 @@
     (is (worker-status worker) :shutdown "status is shutdown")
     (is (worker-queue-count worker) 0 "queue is empty")))
 
+(defclass results-worker (worker)
+  ((results :initarg :results)
+   (lock :initarg :lock
+         :initform (bt:make-lock))))
+(defmethod process-job ((worker results-worker) job)
+  (sleep 0.1)
+  (bt:with-lock-held ((slot-value worker 'lock))
+    (vector-push-extend (* job 2) (slot-value worker 'results))))
+
 (let* ((bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
                                         (*error-output* . ,*error-output*)))
        (results (make-array 0 :adjustable t :fill-pointer 0))
-       (worker (make-instance 'worker
-                              :process-fn (lambda (job)
-                                            (sleep 0.1)
-                                            (vector-push-extend (* job 2) results)))))
+       (worker (make-instance 'results-worker :results results)))
   (subtest "can make"
     (ok worker)
     (is (worker-status worker) :shutdown)
@@ -70,14 +79,13 @@
 
 (let* ((bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
                                         (*error-output* . ,*error-output*)))
-       (results-lock (bt:make-recursive-lock))
+       (results-lock (bt:make-lock))
        (results (make-array 0 :adjustable t :fill-pointer 0))
        (cluster (make-instance 'cluster
-                               :worker-num 4
-                               :process-fn (lambda (job)
-                                             (sleep 0.1)
-                                             (bt:with-recursive-lock-held (results-lock)
-                                               (vector-push-extend (* job 2) results))))))
+                               :workers (loop repeat 4
+                                              collect (make-instance 'results-worker
+                                                                     :lock results-lock
+                                                                     :results results)))))
   (ok cluster "can make")
 
   (subtest "can add-job"
@@ -109,11 +117,8 @@
        (task-count 1000)
        (worker-count 2)
        (cluster (make-instance 'cluster
-                               :worker-num worker-count
-                               :process-fn
-                               (lambda (job)
-                                 (declare (ignore job))
-                                 (sleep 0.01))))
+                               :workers (loop repeat worker-count
+                                              collect (make-instance 'sleep-worker :sec 0.01))))
        start)
   (subtest "process 1000 jobs"
     (dotimes (i task-count)

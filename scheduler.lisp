@@ -6,8 +6,7 @@
 (in-package #:legion/scheduler)
 
 (defun make-round-robin-scheduler (workers)
-  (let ((worker-num (length workers))
-        (i 0))
-    (lambda (workers job)
-      (add-job (svref workers (mod (incf i) worker-num))
-               job))))
+  (let ((workers (copy-seq workers)))
+    (setf (cdr (last workers)) workers)
+    (lambda (job)
+      (add-job (pop workers) job))))

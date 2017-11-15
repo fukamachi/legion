@@ -39,16 +39,14 @@
    (scheduler :initarg :scheduler
               :accessor cluster-scheduler)
 
-   (workers :initform '()
+   (workers :initarg :workers
+            :initform '()
             :reader cluster-workers)))
 
-(defmethod initialize-instance :after ((cluster cluster) &key worker-num process-fn (queue (make-queue))
-                                       &allow-other-keys)
-  (let ((workers (make-workers-array worker-num process-fn queue)))
-    (setf (slot-value cluster 'workers) workers)
-    (unless (slot-boundp cluster 'scheduler)
-      (setf (slot-value cluster 'scheduler)
-            (make-round-robin-scheduler workers)))))
+(defmethod initialize-instance :after ((cluster cluster) &key workers &allow-other-keys)
+  (unless (slot-boundp cluster 'scheduler)
+    (setf (slot-value cluster 'scheduler)
+          (make-round-robin-scheduler workers))))
 
 (defmethod print-object ((object cluster) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -57,35 +55,30 @@
             (length (cluster-workers object)))))
 
 (defmethod start ((cluster cluster))
-  (loop for worker across (cluster-workers cluster)
-        do (start worker))
+  (mapc #'start (cluster-workers cluster))
   (setf (cluster-status cluster) :running)
   (vom:info "cluster has started.")
   cluster)
 
 (defmethod stop ((cluster cluster))
-  (loop for worker across (cluster-workers cluster)
-        do (stop worker))
+  (mapc #'stop (cluster-workers cluster))
   (setf (cluster-status cluster) :shutting)
-  (loop for worker across (cluster-workers cluster)
-        for thread = (worker-thread worker)
-        when thread
-          do (join-thread thread))
+  (mapc (lambda (worker)
+          (let ((thread (worker-thread worker)))
+            (when thread
+              (join-thread thread))))
+        (cluster-workers cluster))
   (setf (cluster-status cluster) :shutdown)
   cluster)
 
 (defmethod kill ((cluster cluster))
-  (loop for worker across (cluster-workers cluster)
-        do (kill worker))
+  (mapc #'kill (cluster-workers cluster))
   (setf (cluster-status cluster) :shutdown)
   cluster)
 
 (defmethod add-job ((cluster cluster) job)
   (when (eq (cluster-status cluster) :shutting)
     (return-from add-job nil))
-  (let ((workers (cluster-workers cluster)))
-    (unless (funcall (cluster-scheduler cluster)
-                     workers
-                     job)
-      (error "Failed to add a job"))
-    t))
+  (unless (funcall (cluster-scheduler cluster) job)
+    (error "Failed to add a job"))
+  t)
