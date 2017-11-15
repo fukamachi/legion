@@ -19,11 +19,12 @@
            #:make-worker
            #:worker-status
            #:worker-queue-count
+           #:fetch-job
+           #:process-job
            #:start
            #:stop
            #:kill
-           #:add-job
-           #:fetch-job))
+           #:add-job))
 (in-package #:legion/worker)
 
 (defstruct (worker (:constructor make-worker (process-fn &key queue
@@ -42,23 +43,39 @@
             (worker-status object)
             (worker-queue-count object))))
 
-(defun make-thread-function (worker)
-  (let ((process-fn (worker-process-fn worker))
-        (queue (worker-queue worker))
-        (wait-lock (worker-wait-lock worker))
-        (wait-cond (worker-wait-cond worker)))
-    (lambda ()
-      (unwind-protect
-           (loop
-             (when (queue-empty-p queue)
-               (when (eq (worker-status worker) :shutting)
-                 (return))
-               (setf (worker-status worker) :idle)
-               (with-recursive-lock-held (wait-lock)
-                 (condition-wait wait-cond wait-lock)))
-             (funcall process-fn worker))
-        (vom:info "worker is shutting down. bye.")
-        (setf (worker-status worker) :shutdown)))))
+(defgeneric fetch-job (worker)
+  (:documentation "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag.")
+  (:method ((worker worker))
+    (with-slots (queue queue-lock) worker
+      (if (queue-empty-p queue)
+          (values nil nil)
+          (values (with-recursive-lock-held (queue-lock)
+                    (dequeue queue))
+                  t)))))
+
+(defgeneric process-job (worker job)
+  (:method ((worker worker) job)
+    (funcall (worker-process-fn worker) job)))
+
+(defgeneric run (worker)
+  (:method ((worker worker))
+    (let ((wait-lock (worker-wait-lock worker))
+          (wait-cond (worker-wait-cond worker)))
+      (loop
+        (multiple-value-bind (job exists)
+            (fetch-job worker)
+          (if exists
+              (process-job worker job)
+              (progn
+                (when (eq (worker-status worker) :shutting)
+                  (return))
+                (setf (worker-status worker) :idle)
+                (with-recursive-lock-held (wait-lock)
+                  (condition-wait wait-cond wait-lock))))))))
+  (:method :around ((worker worker))
+    (unwind-protect (call-next-method)
+      (vom:info "worker is shutting down. bye.")
+      (setf (worker-status worker) :shutdown))))
 
 (defun worker-queue-count (worker)
   "Return the number of outstanding jobs."
@@ -73,8 +90,8 @@ It raises an error if the WORKER is already running.")
         (error "Worker is already running."))
       (setf status :running)
       (setf thread
-            (make-thread (make-thread-function worker)
-                         :name "legion")))
+            (make-thread (lambda () (run worker))
+                         :name "legion worker")))
     (vom:info "worker has started.")
     worker))
 
@@ -118,13 +135,3 @@ It raises an error if the WORKER is not running.")
         (condition-notify wait-cond)
         (setf status :running)))
     worker))
-
-(defgeneric fetch-job (worker)
-  (:documentation "Dequeue a value from WORKER's queue. This returns multiple values -- the job and a successed flag.")
-  (:method ((worker worker))
-    (with-slots (queue queue-lock) worker
-      (if (queue-empty-p queue)
-          (values nil nil)
-          (values (with-recursive-lock-held (queue-lock)
-                    (dequeue queue))
-                  t)))))

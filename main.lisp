@@ -6,11 +6,12 @@
                 #:make-worker
                 #:worker-status
                 #:worker-queue-count
+                #:fetch-job
+                #:process-job
                 #:start
                 #:stop
                 #:kill
-                #:add-job
-                #:fetch-job)
+                #:add-job)
   (:import-from #:legion/cluster
                 #:cluster
                 #:make-cluster
@@ -22,11 +23,12 @@
            #:make-worker
            #:worker-status
            #:worker-queue-count
+           #:fetch-job
+           #:process-job
            #:start
            #:stop
            #:kill
            #:add-job
-           #:fetch-job
 
            #:cluster
            #:make-cluster
