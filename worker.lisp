@@ -69,9 +69,15 @@
           (wait-cond (worker-wait-cond worker)))
       (loop
         (multiple-value-bind (job exists)
-            (fetch-job worker)
+            (handler-case
+                (fetch-job worker)
+              (error (e)
+                (vom:error "Error while fetching a job from ~A~%    ERROR = ~A" worker e)))
           (if exists
-              (process-job worker job)
+              (handler-case
+                  (process-job worker job)
+                (error (e)
+                  (vom:error "Error while processing a job = ~S~%    ERROR = ~A~%    WORKER = ~A" job e worker)))
               (progn
                 (when (eq (worker-status worker) :shutting)
                   (return))
@@ -79,10 +85,12 @@
                 (with-recursive-lock-held (wait-lock)
                   (condition-wait wait-cond wait-lock))))))))
   (:method :around ((worker worker))
-    (unwind-protect (call-next-method)
+    (unwind-protect
+         (handler-case (call-next-method)
+           (error (e)
+             (vom:alert "Unhandled error while running ~A~%    ERROR = ~A" worker e)))
       (vom:info "worker is shutting down. bye.")
       (setf (worker-status worker) :shutdown))))
-
 
 (defgeneric start (worker)
   (:documentation "Start the given WORKER.
