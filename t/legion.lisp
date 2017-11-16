@@ -20,6 +20,7 @@
 
   (subtest "can start"
     (ok (start worker) "start-worker")
+    (sleep 0.1)
     (is (worker-status worker) :idle "status is idle")
     (is (worker-queue-count worker) 0 "queue is empty"))
 
