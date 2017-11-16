@@ -102,7 +102,11 @@ It raises an error if the WORKER is already running.")
       (setf status :running)
       (setf thread
             (make-thread (lambda () (run worker))
-                         :name "legion worker")))
+                         :name "legion worker"
+                         :initial-bindings
+                         (append bt:*default-special-bindings*
+                                 `((*standard-output* . ,*standard-output*)
+                                   (*error-output* . ,*error-output*))))))
     (vom:info "worker has started.")
     worker))
 

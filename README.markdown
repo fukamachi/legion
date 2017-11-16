@@ -13,9 +13,8 @@
 ```common-lisp
 (defparameter *worker*
   (make-worker
-    (let ((out *standard-output*))
-      (lambda (job)
-        (format out "Processed: ~S~%" job)))))
+    (lambda (job)
+      (format t "Processed: ~S~%" job))))
 
 (start *worker*)
 
@@ -30,9 +29,8 @@
 ```common-lisp
 (defparameter *cluster*
   (make-cluster 4
-    (let ((out *standard-output*))
-      (lambda (job)
-        (format out "Processed: ~S~%" job)))))
+    (lambda (job)
+      (format t "Processed: ~S~%" job))))
 
 (start *cluster*)
 
