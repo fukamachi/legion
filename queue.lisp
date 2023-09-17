@@ -13,7 +13,7 @@
 (defstruct (queue (:constructor %make-queue))
   primary
   (buffered '())
-  (lock (bt:make-lock "queue lock")))
+  (lock (bt2:make-lock :name "queue lock")))
 
 (defun make-queue (&optional (initial-size 128))
   (%make-queue :primary (cl-speedy-queue:make-queue initial-size)))
@@ -55,7 +55,7 @@
                (return last))))
 
 (defun enqueue (job queue)
-  (bt:with-lock-held ((queue-lock queue))
+  (bt2:with-lock-held ((queue-lock queue))
     (cl-speedy-queue:enqueue
      job
      (if (need-to-extend-p queue)
@@ -64,7 +64,7 @@
 
 (defun dequeue (queue)
   (let ((primary-queue (queue-primary queue)))
-    (bt:with-lock-held ((queue-lock queue))
+    (bt2:with-lock-held ((queue-lock queue))
       (if (cl-speedy-queue:queue-empty-p primary-queue)
           (values nil nil)
           (values

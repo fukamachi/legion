@@ -33,14 +33,14 @@
 (defclass results-worker (worker)
   ((results :initarg :results)
    (lock :initarg :lock
-         :initform (bt:make-lock))))
+         :initform (bt2:make-lock))))
 (defmethod process-job ((worker results-worker) job)
   (sleep 0.1)
-  (bt:with-lock-held ((slot-value worker 'lock))
+  (bt2:with-lock-held ((slot-value worker 'lock))
     (vector-push-extend (* job 2) (slot-value worker 'results))))
 
-(let* ((bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
-                                        (*error-output* . ,*error-output*)))
+(let* ((bt2:*default-special-bindings* `((*standard-output* . ,*standard-output*)
+                                         (*error-output* . ,*error-output*)))
        (results (make-array 0 :adjustable t :fill-pointer 0))
        (worker (make-instance 'results-worker :results results)))
   (subtest "can make"
@@ -78,9 +78,9 @@
     (is (worker-queue-count worker) 0 "queue is empty")
     (is results #(256 0 6 12 18 24) :test #'equalp)))
 
-(let* ((bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
-                                        (*error-output* . ,*error-output*)))
-       (results-lock (bt:make-lock))
+(let* ((bt2:*default-special-bindings* `((*standard-output* . ,*standard-output*)
+                                         (*error-output* . ,*error-output*)))
+       (results-lock (bt2:make-lock))
        (results (make-array 0 :adjustable t :fill-pointer 0))
        (cluster (make-instance 'cluster
                                :workers (loop repeat 4
@@ -113,8 +113,8 @@
         #(0 6 12 18 24 256)
         :test 'equalp)))
 
-(let* ((bt:*default-special-bindings* `((*standard-output* . ,*standard-output*)
-                                        (*error-output* . ,*error-output*)))
+(let* ((bt2:*default-special-bindings* `((*standard-output* . ,*standard-output*)
+                                         (*error-output* . ,*error-output*)))
        (task-count 1000)
        (worker-count 2)
        (cluster (make-instance 'cluster
