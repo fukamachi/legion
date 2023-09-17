@@ -16,8 +16,7 @@
                 #:queue-empty-p)
   (:import-from #:legion/error
                 #:legion-error)
-  (:import-from #:bordeaux-threads
-                #:join-thread)
+  (:import-from #:bordeaux-threads)
   (:export #:cluster
            #:cluster-status
            #:cluster-workers
@@ -65,7 +64,7 @@
   (mapc (lambda (worker)
           (let ((thread (worker-thread worker)))
             (when thread
-              (join-thread thread))))
+              (bt2:join-thread thread))))
         (cluster-workers cluster))
   (setf (cluster-status cluster) :shutdown)
   cluster)

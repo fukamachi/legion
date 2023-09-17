@@ -6,15 +6,7 @@
                 #:dequeue
                 #:queue-count
                 #:queue-empty-p)
-  (:import-from #:bordeaux-threads
-                #:make-thread
-                #:destroy-thread
-                #:thread-alive-p
-                #:condition-notify
-                #:condition-wait
-                #:make-condition-variable
-                #:make-recursive-lock
-                #:with-recursive-lock-held)
+  (:import-from #:bordeaux-threads)
   (:export #:worker
            #:worker-status
            #:worker-queue
@@ -39,9 +31,9 @@
 
    (thread :initform nil
            :reader worker-thread)
-   (wait-lock :initform (make-recursive-lock "wait-lock")
+   (wait-lock :initform (bt2:make-recursive-lock :name "wait-lock")
               :reader worker-wait-lock)
-   (wait-cond :initform (make-condition-variable)
+   (wait-cond :initform (bt2:make-condition-variable)
               :reader worker-wait-cond)))
 
 (defun worker-queue-count (worker)
@@ -82,8 +74,8 @@
                 (when (eq (worker-status worker) :shutting)
                   (return))
                 (setf (worker-status worker) :idle)
-                (with-recursive-lock-held (wait-lock)
-                  (condition-wait wait-cond wait-lock))))))))
+                (bt2:with-recursive-lock-held (wait-lock)
+                  (bt2:condition-wait wait-cond wait-lock))))))))
   (:method :around ((worker worker))
     (unwind-protect
          (handler-case (call-next-method)
@@ -101,12 +93,12 @@ It raises an error if the WORKER is already running.")
         (error "Worker is already running."))
       (setf status :running)
       (setf thread
-            (make-thread (lambda () (run worker))
-                         :name "legion worker"
-                         :initial-bindings
-                         (append bt:*default-special-bindings*
-                                 `((*standard-output* . ,*standard-output*)
-                                   (*error-output* . ,*error-output*))))))
+            (bt2:make-thread (lambda () (run worker))
+                             :name "legion worker"
+                             :initial-bindings
+                             (append bt2:*default-special-bindings*
+                                     `((*standard-output* . ,*standard-output*)
+                                       (*error-output* . ,*error-output*))))))
     (vom:info "worker has started.")
     worker))
 
@@ -131,8 +123,8 @@ It raises an error if the WORKER is not running.")
     (with-slots (thread status) worker
       (unless thread
         (error "Worker is not running"))
-      (when (thread-alive-p thread)
-        (destroy-thread thread))
+      (when (bt2:thread-alive-p thread)
+        (bt2:destroy-thread thread))
       (vom:info "worker has been killed.")
       (setf thread nil
             status :shutdown))
@@ -146,12 +138,12 @@ It raises an error if the WORKER is not running.")
         (return-from add-job nil))
       (enqueue val queue)
       (when (eq status :idle)
-        (condition-notify wait-cond)
+        (bt2:condition-notify wait-cond)
         (setf status :running)))
     worker))
 
 (defun wakenup (worker)
   (with-slots (status wait-cond) worker
     (when (eq status :idle)
-      (condition-notify wait-cond)
+      (bt2:condition-notify wait-cond)
       (setf status :running))))
